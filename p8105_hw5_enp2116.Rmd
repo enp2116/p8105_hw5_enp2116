@@ -70,8 +70,17 @@ sim_results_df =
 sim_results_df
 ```
 
-
 * Make a plot showing the proportion of times the null was rejected (the power of the test) on the y axis and the true value of $\mu$ on the x axis. Describe the association between effect size and power.
+```{r}
+sim_results_df %>% 
+  mutate(
+    reject = case_when(p_value <= 0.05  ~ TRUE,
+                        p_value > 0.05 ~ FALSE)) %>% 
+  group_by(mu_list) %>% 
+  mutate(power = mean(reject)) %>%
+  ggplot(aes(x = mu_list, y = power, fill = mu_list)) + geom_line() + geom_point() + xlab("True Population Mean") + ylab("Power") + labs(title = "True Population Mean vs Power")
+```
+From the plot of true population mean versus power, we can see that at a true $\mu$ of 1, the power of the test is quite low. However, as $\mu$ increases, the power increases at an decreasing rate as it approaches 1. Generalizing this relationship from our example, we can see that as effect size increases from the null (which is $\mu = 0$ here), we have greater power to detect a true difference and at a high enough effect size, the tests will be almost perfect at doing so.
 
 * Make a plot showing the average estimate of $\hat{\mu}$ on the y axis and the true value of $\mu$ on the x axis. Make a second plot (or overlay on the first) the average estimate of $\hat{\mu}$ only in samples for which the null was rejected on the y axis and the true value of $\mu$ on the x axis. Is the sample average of $\hat{\mu}$ across tests for which the null is rejected approximately equal to the true value of $\mu$? Why or why not?
 
