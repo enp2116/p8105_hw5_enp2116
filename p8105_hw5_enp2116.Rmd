@@ -9,6 +9,7 @@ output: github_document
 knitr::opts_chunk$set(echo = TRUE)
 
 library(tidyverse)
+library(gridExtra)
 
 set.seed(4)
 ```
@@ -71,17 +72,43 @@ sim_results_df
 ```
 
 * Make a plot showing the proportion of times the null was rejected (the power of the test) on the y axis and the true value of $\mu$ on the x axis. Describe the association between effect size and power.
-```{r}
+```{r, echo=FALSE}
 sim_results_df %>% 
   mutate(
     reject = case_when(p_value <= 0.05  ~ TRUE,
                         p_value > 0.05 ~ FALSE)) %>% 
   group_by(mu_list) %>% 
   mutate(power = mean(reject)) %>%
-  ggplot(aes(x = mu_list, y = power, fill = mu_list)) + geom_line() + geom_point() + xlab("True Population Mean") + ylab("Power") + labs(title = "True Population Mean vs Power")
+  ggplot(aes(x = mu_list, y = power)) + geom_line() + geom_point() + xlab("True Population Mean") + ylab("Power") + labs(title = "True Population Mean vs Power")
 ```
 From the plot of true population mean versus power, we can see that at a true $\mu$ of 1, the power of the test is quite low. However, as $\mu$ increases, the power increases at an decreasing rate as it approaches 1. Generalizing this relationship from our example, we can see that as effect size increases from the null (which is $\mu = 0$ here), we have greater power to detect a true difference and at a high enough effect size, the tests will be almost perfect at doing so.
 
-* Make a plot showing the average estimate of $\hat{\mu}$ on the y axis and the true value of $\mu$ on the x axis. Make a second plot (or overlay on the first) the average estimate of $\hat{\mu}$ only in samples for which the null was rejected on the y axis and the true value of $\mu$ on the x axis. Is the sample average of $\hat{\mu}$ across tests for which the null is rejected approximately equal to the true value of $\mu$? Why or why not?
+* First, making a plot showing the average estimate of $\hat{\mu}$ on the y axis and the true value of $\mu$ on the x axis. Second, making a second plot of the average estimate of $\hat{\mu}$ only in samples for which the null was rejected on the y axis and the true value of $\mu$ on the x axis. 
+```{r, echo=FALSE}
+plot_1 = sim_results_df %>% 
+  group_by(mu_list) %>%
+  mutate(
+    reject = case_when(p_value <= 0.05  ~ TRUE,
+                        p_value > 0.05 ~ FALSE),
+    avg_mu_hat = mean(mu_hat)
+    ) %>% 
+  ggplot(aes(mu_list)) + geom_line(aes(y = avg_mu_hat), color = "blue") + geom_point(aes(y = avg_mu_hat), color = "blue") + xlab("True Population Mean") + ylab("Avg Estimate of Pop Mean") + labs(title = "True Population Mean vs Average Estimate") + ylim(0, 6)
+```
+
+```{r, echo=FALSE}
+plot_2 = sim_results_df %>% 
+  group_by(mu_list) %>%
+  mutate(
+    reject = case_when(p_value <= 0.05  ~ TRUE,
+                        p_value > 0.05 ~ FALSE)) %>% 
+  filter(reject == TRUE) %>% 
+    mutate(avg_mu_hat_reject = mean(mu_hat)) %>% 
+  ggplot(aes(mu_list)) + geom_line(aes(y = avg_mu_hat_reject), color = "red") + geom_point(aes(y = avg_mu_hat_reject), color = "red") + xlab("True Population Mean") + ylab("Avg Estimate of Pop Mean") + labs(title = "True Population Mean vs Average Estimate for Rejected Null") + ylim(0, 6)
+
+grid.arrange(plot_1, plot_2)
+```
+The sample average of $\hat{\mu}$ across tests for which the null is rejected approximately equal to the true value of $\mu$ at $\mu \geq 3$. At $\mu = 1$, we see a large discrepancy between the average estimates, with the rejected estimate over 2 and the total at about 1. The discrepancy gets smaller at $\mu = 2$, with the rejected estimate at about 2.5 and the total at about 2. This is because after the effect size gets large enough, the test will nearly always reject the null. At smaller values of $\mu$, where rejection occurs more often because values are closer to $\mu_0 = 0$, the rejected $\hat{\mu}$s are larger on average.
+
+
 
 
